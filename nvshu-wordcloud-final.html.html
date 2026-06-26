@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>女书研究关键词 - 交互式词云</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #E91E63;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 32px;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(233, 30, 99, 0.5);
+        }
+        
+        .subtitle {
+            color: #CE93D8;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        #wordcloud {
+            width: 100%;
+            height: 600px;
+            background: radial-gradient(circle at center, #1a1a2e 0%, transparent 70%);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .info-panel {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            display: none;
+        }
+        
+        .info-panel.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .info-panel h3 {
+            color: #E91E63;
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+        
+        .info-panel p {
+            color: #CE93D8;
+            line-height: 1.8;
+            font-size: 14px;
+        }
+        
+        .hint {
+            color: #CE93D8;
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            opacity: 0.6;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 36px;
+            color: #E91E63;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #CE93D8;
+            margin-top: 5px;
+        }
+        
+        .loading {
+            color: #CE93D8;
+            text-align: center;
+            padding: 50px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>女书研究关键词</h1>
+        <p class="subtitle">世界上唯一由女性创造和使用的文字 · 交互式词云</p>
+        
+        <div id="wordcloud">
+            <div class="loading">正在加载词云...</div>
+        </div>
+        
+        <div class="info-panel" id="infoPanel">
+            <h3 id="wordTitle">关键词</h3>
+            <p id="wordDesc">描述信息</p>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-number">28</div>
+                <div class="stat-label">关键词总数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">600+</div>
+                <div class="stat-label">历史年份</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">12</div>
+                <div class="stat-label">传承人</div>
+            </div>
+        </div>
+        
+        <p class="hint">鼠标悬停词语查看详情，点击词语显示说明</p>
+    </div>
+
+    <!-- 先加载 ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    
+    <!-- 再加载词云插件 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
+    
+    <script>
+        // 等待所有脚本加载完成
+        window.addEventListener('load', function() {
+            initWordCloud();
+        });
+        
+        function initWordCloud() {
+            // 检查 ECharts 是否加载成功
+            if (typeof echarts === 'undefined') {
+                document.getElementById('wordcloud').innerHTML = '<div class="loading" style="color: #E91E63;">加载失败：ECharts 未加载</div>';
+                return;
+            }
+            
+            // 词云数据
+            const wordsData = [
+                {"name": "女书", "value": 100},
+                {"name": "江永", "value": 80},
+                {"name": "文化", "value": 75},
+                {"name": "汉字", "value": 60},
+                {"name": "女性文字", "value": 55},
+                {"name": "保护", "value": 50},
+                {"name": "传承", "value": 45},
+                {"name": "数字化", "value": 40},
+                {"name": "非遗", "value": 38},
+                {"name": "女性", "value": 35},
+                {"name": "习俗", "value": 30},
+                {"name": "书写", "value": 28},
+                {"name": "瑶族", "value": 25},
+                {"name": "姊妹", "value": 25},
+                {"name": "宫哲兵", "value": 22},
+                {"name": "兰花", "value": 20},
+                {"name": "教学", "value": 18},
+                {"name": "刺绣", "value": 15},
+                {"name": "三朝书", "value": 15},
+                {"name": "女书园", "value": 12},
+                {"name": "织锦", "value": 12},
+                {"name": "老同", "value": 10},
+                {"name": "八角花", "value": 10},
+                {"name": "人死书焚", "value": 8},
+                {"name": "团扇", "value": 8},
+                {"name": "反叛", "value": 8},
+                {"name": "庙祭", "value": 5},
+                {"name": "歌堂", "value": 5}
+            ];
+            
+            // 关键词详细说明
+            const wordDescriptions = {
+                "女书": "江永女书，世界上唯一由女性创造和使用的文字系统，2006年入选国家级非物质文化遗产。",
+                "江永": "湖南省永州市江永县，女书的发源地和唯一流传地区。",
+                "文化": "女书承载着丰富的女性文化内涵，包括姊妹情谊、女性价值观等。",
+                "汉字": "女书与汉字的关系密切，是汉字的异体字系统。",
+                "女性文字": "女书是专门由女性创造、女性使用、女性传承的独特文字。",
+                "保护": "女书面临传承危机，需要系统性保护措施。",
+                "传承": "女书通过母传女、老传少的方式代代相传。",
+                "数字化": "运用数字技术保护和传承女书文化的重要手段。",
+                "非遗": "女书于2006年入选第一批国家级非物质文化遗产名录。",
+                "女性": "女书体现了女性群体的智慧和创造力。",
+                "习俗": "女书与当地女性习俗密切相关，如结拜姊妹、写三朝书等。",
+                "书写": "女书书写载体包括纸书、扇面、布帕等。",
+                "瑶族": "江永县是瑶族聚居地，女书与瑶族文化交融。",
+                "姊妹": "女书文化中的姊妹情谊是其核心社会关系。",
+                "宫哲兵": "武汉大学教授，1982年首次向学术界公开女书发现。",
+                "兰花": "江永县县花，女书作品中常见的意象。",
+                "教学": "女书传承需要通过教学活动延续。",
+                "刺绣": "女书常见于刺绣作品，是重要载体。",
+                "三朝书": "新娘出嫁第三天，姊妹送来的女书作品。",
+                "女书园": "江永县女书文化生态博物馆。",
+                "织锦": "女书可织入织锦，成为永久性记录。",
+                "老同": "女书文化中结拜的异姓姊妹。",
+                "八角花": "女书作品中常见的装饰图案。",
+                "人死书焚": "女书传统习俗，主人去世后女书作品随葬或焚毁。",
+                "团扇": "女书书写的常见载体之一。",
+                "反叛": "女书体现女性对男权社会的反思与抗争。",
+                "庙祭": "女书文化与庙会祭祀活动相关。",
+                "歌堂": "女性聚会唱歌的场所，女书文化的重要空间。"
+            };
+            
+            // 初始化图表
+            const chartDom = document.getElementById('wordcloud');
+            chartDom.innerHTML = ''; // 清除加载提示
+            const myChart = echarts.init(chartDom);
+            
+            // 配置项
+            const option = {
+                backgroundColor: 'transparent',
+                
+                tooltip: {
+                    show: true,
+                    formatter: function(params) {
+                        return '<div style="padding: 10px;">' +
+                            '<strong style="font-size: 16px; color: #E91E63;">' + params.name + '</strong>' +
+                            '<br><span style="color: #CE93D8;">词频：' + params.value + '</span>' +
+                        '</div>';
+                    },
+                    backgroundColor: 'rgba(26, 26, 46, 0.95)',
+                    borderColor: '#E91E63',
+                    borderWidth: 1,
+                    textStyle: {
+                        color: '#fff'
+                    }
+                },
+                
+                series: [{
+                    type: 'wordCloud',
+                    shape: 'circle',
+                    
+                    left: 'center',
+                    top: 'center',
+                    width: '90%',
+                    height: '90%',
+                    
+                    sizeRange: [14, 60],
+                    rotationRange: [-45, 45],
+                    rotationStep: 15,
+                    gridSize: 8,
+                    drawOutOfBound: false,
+                    layoutAnimation: true,
+                    
+                    textStyle: {
+                        fontFamily: 'Microsoft YaHei, PingFang SC, sans-serif',
+                        fontWeight: 'normal',
+                        color: function(params) {
+                            const value = params.value;
+                            if (value >= 70) return '#E91E63';
+                            if (value >= 40) return '#9C27B0';
+                            if (value >= 20) return '#BA68C8';
+                            return '#CE93D8';
+                        }
+                    },
+                    
+                    emphasis: {
+                        focus: 'self',
+                        textStyle: {
+                            fontWeight: 'bold',
+                            shadowBlur: 20,
+                            shadowColor: '#E91E63'
+                        }
+                    },
+                    
+                    data: wordsData
+                }]
+            };
+            
+            // 渲染图表
+            myChart.setOption(option);
+            
+            // 点击事件
+            myChart.on('click', function(params) {
+                const word = params.name;
+                const desc = wordDescriptions[word] || '暂无详细说明';
+                
+                document.getElementById('wordTitle').textContent = word;
+                document.getElementById('wordDesc').textContent = desc;
+                document.getElementById('infoPanel').classList.add('active');
+                
+                setTimeout(() => {
+                    document.getElementById('infoPanel').classList.remove('active');
+                }, 5000);
+            });
+            
+            // 响应式
+            window.addEventListener('resize', function() {
+                myChart.resize();
+            });
+        }
+    </script>
+</body>
+</html>
